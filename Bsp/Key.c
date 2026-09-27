@@ -23,7 +23,6 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
     static uint32_t last_tick = 0;
     uint32_t current_tick = HAL_GetTick();
-    
     if (GPIO_Pin == GPIO_PIN_1)
     {
         if (current_tick - last_tick >200)
