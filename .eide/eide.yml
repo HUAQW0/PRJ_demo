@@ -8,6 +8,7 @@ srcDirs:
   - Drivers
   - Bsp
   - Com
+  - Net
 virtualFolder:
   name: <virtual_root>
   files: []

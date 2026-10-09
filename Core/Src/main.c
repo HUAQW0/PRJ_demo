@@ -28,6 +28,8 @@
 #include "Key.h"
 #include "DHT11.h"
 #include "delay.h"
+#include "esp_at.h"
+#include "onenet.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -102,15 +104,65 @@ int main(void)
 		printf("DHT11 Error \r\n");
 	  delay_ms(500);
 	}
+
+  if(ESP_AT_Init())
+  {
+    printf("ESP32-C3 AT init failed!\r\n");
+    Error_Handler();
+  }
+
+  if(OneNet_DevLink())
+  {
+    printf("OneNET MQTT connect failed!\r\n");
+    Error_Handler();
+  }
+
+  if(OneNET_Subscribe())
+  {
+    printf("OneNET property/set subscribe failed!\r\n");
+    Error_Handler();
+  }
+  printf("OneNET MQTT connected!\r\n");
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+  uint32_t last_publish_tick = 0;
   while (1)
   {
-    DHT11_Read_Data(&temp,&humi);
-    printf("Temperature: %d, Humidity: %d\r\n", temp, humi);
-    delay_ms(1000);
+    if((uint32_t)(HAL_GetTick() - last_publish_tick) >= 5000U)
+    {
+      DHT11_Read_Data(&temp, &humi);
+
+      if(OneNet_SendData() == 0)
+      {
+        printf("OneNET property upload OK\r\n");
+      }
+      else
+      {
+        printf("OneNET publish failed!\r\n");
+
+        ESP_AT_SendCmd("AT+CIPCLOSE\r\n", "OK");
+        if(OneNet_DevLink() == 0)
+        {
+          if(OneNET_Subscribe())
+          {
+            printf("OneNET re-subscribe failed!\r\n");
+          }
+          printf("OneNET reconnected!\r\n");
+        }
+      }
+
+      last_publish_tick = HAL_GetTick();
+    }
+
+    unsigned char *recv_data = ESP_AT_GetIPD(20);
+    if(recv_data != NULL)
+    {
+      OneNet_RevPro(recv_data);
+    }
+
+    HAL_Delay(10);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
