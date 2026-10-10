@@ -30,6 +30,7 @@
 #include "delay.h"
 #include "esp_at.h"
 #include "onenet.h"
+#include "OLED.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -99,6 +100,9 @@ int main(void)
   /* USER CODE BEGIN 2 */
   Led_Init();
   Key_Init();
+  OLED_Init();
+
+
   while(DHT11_Init())
 	{
 		printf("DHT11 Error \r\n");
@@ -130,6 +134,20 @@ int main(void)
   uint32_t last_publish_tick = 0;
   while (1)
   {
+
+    OLED_ShowString(1, 1, "Temp:");
+    OLED_ShowNum(1, 6, temp, 2);
+    OLED_ShowString(1, 9, "Humi:");
+    OLED_ShowNum(1, 14, humi, 2);
+    if(Led_Status)
+    {
+      OLED_ShowString(2, 1, "LED:ON ");
+    }
+    else
+    {
+      OLED_ShowString(2, 1, "LED:OFF");
+    }
+
     if((uint32_t)(HAL_GetTick() - last_publish_tick) >= 5000U)
     {
       DHT11_Read_Data(&temp, &humi);
